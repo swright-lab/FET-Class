@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FET — Today's Lesson</title>
+<style>
+:root{--navy:#1E2D5E;--orange:#E8622A;--teal:#1A7A6E;--gold:#F5A623;--bg:#F4F6FB;--white:#FFFFFF;--text:#1A1A2E;--muted:#4A5568;--border:#E2E8F0;--green:#1D6A3A;--purple:#6B3FA0;--radius:12px;--radius-sm:8px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* PICKER */
+#picker-screen{min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:24px 16px}
+.picker-card{background:var(--white);border-radius:var(--radius);width:100%;max-width:440px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);margin-top:16px}
+.picker-header{background:var(--navy);padding:20px 22px 18px}
+.picker-logo{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.picker-logo-mark{width:36px;height:36px;background:rgba(255,255,255,.12);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.picker-logo-mark svg{width:20px;height:20px;stroke:var(--white);fill:none;stroke-width:2}
+.picker-logo-text{font-size:13px;font-weight:600;color:var(--white)}
+.picker-logo-sub{font-size:11px;color:rgba(255,255,255,.55);margin-top:1px}
+.picker-heading{font-size:20px;font-weight:600;color:var(--white);margin-bottom:4px}
+.picker-sub{font-size:13px;color:rgba(255,255,255,.6);line-height:1.5}
+.picker-body{padding:18px 20px}
+.search-wrap{position:relative;margin-bottom:14px}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;opacity:.4}
+.picker-search{width:100%;padding:9px 11px 9px 34px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;color:var(--text);background:var(--white);transition:border-color .15s}
+.picker-search:focus{outline:none;border-color:var(--teal)}
+.name-list{display:flex;flex-direction:column;gap:5px;max-height:300px;overflow-y:auto}
+.name-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:all .12s;background:var(--white)}
+.name-item:hover{background:var(--bg);border-color:#CBD5E0}
+.name-item.selected{border-color:var(--teal);background:#E8F5F1}
+.name-item.hidden-item{display:none}
+.name-avatar{width:32px;height:32px;border-radius:50%;background:#E8F5F1;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--teal);flex-shrink:0;transition:all .12s}
+.name-item.selected .name-avatar{background:var(--teal);color:var(--white)}
+.name-text{font-size:14px;color:var(--text);font-weight:500}
+.name-item.selected .name-text{color:#065F46}
+.no-results{text-align:center;padding:20px;font-size:13px;color:var(--muted)}
+.hidden{display:none!important}
+.picker-footer{padding:14px 20px 20px;border-top:1px solid var(--border)}
+.confirm-btn{width:100%;padding:11px;background:var(--teal);color:var(--white);border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
+.confirm-btn:hover:not(:disabled){background:#145f55}
+.confirm-btn:disabled{background:var(--bg);color:var(--muted);cursor:default;border:1.5px solid var(--border)}
+.picker-note{font-size:11px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.5}
+
+/* APP */
+#lesson-app{display:none}
+#app-bar{position:sticky;top:0;z-index:100;background:var(--navy);padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:52px}
+.bar-tag{font-size:11px;color:var(--gold);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.bar-title{font-size:14px;color:rgba(255,255,255,.9);font-weight:500}
+.user-chip{display:flex;align-items:center;gap:7px;padding:4px 10px 4px 4px;border-radius:20px;background:rgba(255,255,255,.1);cursor:pointer;transition:background .15s}
+.user-chip:hover{background:rgba(255,255,255,.18)}
+.user-avatar{width:26px;height:26px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--white);flex-shrink:0}
+.user-name{font-size:12px;color:rgba(255,255,255,.8);font-weight:500}
+.user-caret{font-size:10px;color:rgba(255,255,255,.4)}
+.progress-track{height:3px;background:rgba(255,255,255,.15)}
+.progress-fill{height:100%;background:var(--gold);transition:width .4s ease}
+.offline-banner{background:#FEF3C7;border-bottom:1px solid #FCD34D;padding:8px 16px;font-size:13px;color:#92400E;display:none;align-items:center;gap:8px}
+.lesson-body{max-width:720px;margin:0 auto;padding:20px 16px 88px}
+
+/* SLIDE */
+.slide-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;margin-bottom:16px}
+.slide-card-header{padding:16px 20px 14px;border-bottom:1px solid var(--border)}
+.type-chip{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.chip-bellringer{background:#FEE2E2;color:#9B1C1C}
+.chip-minilesson{background:#EEF2FF;color:#3730A3}
+.chip-activity{background:#D1FAE5;color:#065F46}
+.chip-biblical{background:#E0FDF4;color:#115E59}
+.chip-exitticket{background:#FEF3C7;color:#92400E}
+.slide-title{font-size:18px;font-weight:600;color:var(--navy);line-height:1.3;margin-top:6px}
+.slide-card-body{padding:16px 20px}
+.bullet-list{display:flex;flex-direction:column;gap:9px;margin-bottom:16px}
+.bullet-row{display:flex;gap:11px;align-items:flex-start}
+.bullet-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:7px}
+.dot-bellringer,.dot-exitticket{background:var(--orange)}
+.dot-minilesson{background:var(--navy)}
+.dot-activity{background:var(--green)}
+.dot-biblical{background:var(--teal)}
+.bullet-text{font-size:15px;color:var(--text);line-height:1.55}
+
+/* INTERACTION */
+.interact-box{border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border)}
+.interact-header{padding:9px 14px;display:flex;align-items:center;gap:8px}
+.interact-label{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--white);text-transform:uppercase}
+.interact-mins{margin-left:auto;font-size:11px;color:rgba(255,255,255,.7)}
+.hdr-write{background:var(--teal)}
+.hdr-poll{background:var(--purple)}
+.hdr-exit{background:var(--orange)}
+.interact-body{padding:14px 16px;background:var(--white)}
+.interact-prompt{font-size:14px;color:var(--muted);line-height:1.55;margin-bottom:12px}
+
+/* TIMER */
+.timer-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.timer-display{font-size:26px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums;min-width:56px}
+.timer-display.urgent{color:var(--orange)}
+.timer-label{font-size:12px;color:var(--muted)}
+.timer-btn{padding:5px 14px;border:1.5px solid var(--border);border-radius:6px;background:var(--white);font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s;font-family:inherit}
+.timer-btn:hover{background:var(--bg)}
+.timer-btn.running{border-color:var(--orange);color:var(--orange)}
+.timer-btn.done{opacity:.5;cursor:default}
+
+/* WRITE */
+textarea.resp{width:100%;min-height:80px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;color:var(--text);background:var(--white);resize:vertical;line-height:1.5;transition:border-color .15s}
+textarea.resp:focus{outline:none;border-color:var(--teal)}
+.submit-row{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:10px}
+.char-count{font-size:12px;color:var(--muted)}
+.submit-btn{padding:8px 22px;background:var(--teal);color:var(--white);border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
+.submit-btn:hover:not(:disabled){background:#145f55}
+.submit-btn:disabled{background:var(--bg);color:var(--muted);cursor:default;border:1.5px solid var(--border)}
+.submitted-state{display:flex;align-items:flex-start;gap:10px;padding:12px;background:#E8F5F1;border-radius:var(--radius-sm);border:1px solid #9FE1CB}
+.submitted-check{font-size:16px;flex-shrink:0;margin-top:1px}
+.submitted-label{font-size:13px;color:#065F46;font-weight:600;margin-bottom:3px}
+.submitted-text{font-size:13px;color:#0F6E56;line-height:1.5;font-style:italic}
+
+/* POLL */
+.poll-opts{display:flex;flex-direction:column;gap:8px}
+.poll-opt{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:all .15s;font-size:14px;color:var(--text)}
+.poll-opt:hover:not(.voted){background:var(--bg);border-color:#CBD5E0}
+.poll-opt.selected{border-color:var(--teal);background:#E8F5F1;color:#065F46}
+.poll-opt.voted{cursor:default}
+.poll-letter{font-weight:700;font-size:13px;min-width:20px;color:var(--muted)}
+.poll-opt.selected .poll-letter{color:var(--teal)}
+.vote-confirmed{font-size:12px;color:var(--teal);font-weight:600;margin-top:10px}
+
+/* NAV */
+.nav-bar{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;z-index:50}
+.nav-btn{display:flex;align-items:center;gap:6px;padding:9px 18px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--white);font-size:14px;color:var(--muted);cursor:pointer;transition:all .15s;font-family:inherit;font-weight:500}
+.nav-btn:hover:not(:disabled){background:var(--bg);color:var(--text)}
+.nav-btn:disabled{opacity:.35;cursor:default}
+.nav-btn.primary{background:var(--navy);color:var(--white);border-color:var(--navy)}
+.nav-btn.primary:hover:not(:disabled){background:#16235a}
+.nav-counter{font-size:13px;color:var(--muted);font-weight:500}
+
+/* SWITCH MODAL */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.modal-backdrop.open{display:flex}
+.switch-modal{background:var(--white);border-radius:var(--radius) var(--radius) 0 0;width:100%;max-width:480px;padding:20px;max-height:80vh;display:flex;flex-direction:column}
+.switch-title{font-size:16px;font-weight:600;color:var(--navy);margin-bottom:4px}
+.switch-sub{font-size:13px;color:var(--muted);margin-bottom:14px}
+.switch-search{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;color:var(--text);background:var(--white);margin-bottom:10px;transition:border-color .15s}
+.switch-search:focus{outline:none;border-color:var(--teal)}
+.switch-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px}
+.switch-cancel{margin-top:12px;width:100%;padding:10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--white);font-size:14px;color:var(--muted);cursor:pointer;font-family:inherit}
+</style>
+</head>
+<body>
+
+<!-- PICKER -->
+<div id="picker-screen">
+  <div class="picker-card">
+    <div class="picker-header">
+      <div class="picker-logo">
+        <div class="picker-logo-mark">
+          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div>
+          <div class="picker-logo-text">Foundations of Engineering &amp; Technology</div>
+          <div class="picker-logo-sub">Student companion app</div>
+        </div>
+      </div>
+      <div class="picker-heading">Who are you?</div>
+      <div class="picker-sub">Tap your name. This device will remember you — you won't need to do this again.</div>
+    </div>
+    <div class="picker-body">
+      <div class="search-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input class="picker-search" type="text" placeholder="Search by name…"
+          oninput="filterNames(this.value)" autocomplete="off">
+      </div>
+      <div class="name-list" id="name-list"></div>
+      <div class="no-results hidden" id="no-results">No names match your search.</div>
+    </div>
+    <div class="picker-footer">
+      <button class="confirm-btn" id="confirm-btn" disabled onclick="confirmName()">
+        Select your name to continue
+      </button>
+      <div class="picker-note">Only your teacher can see your responses.<br>Tap "Not you?" in the top bar if the wrong name is saved.</div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="lesson-app">
+  <div class="offline-banner" id="offline-banner">⚠ You're offline. Responses save when connection returns.</div>
+  <div id="app-bar">
+    <div>
+      <div class="bar-tag" id="bar-tag">Unit 1 · Week 1 · Day 1</div>
+      <div class="bar-title" id="bar-title">Loading…</div>
+    </div>
+    <div class="user-chip" onclick="openSwitchModal()" title="Tap to change name">
+      <div class="user-avatar" id="user-avatar">?</div>
+      <div class="user-name" id="user-name-el"></div>
+      <div class="user-caret">▾</div>
+    </div>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+  <div class="lesson-body" id="lesson-body"></div>
+  <nav class="nav-bar">
+    <button class="nav-btn" id="prev-btn" onclick="navigate(-1)" disabled>← Previous</button>
+    <span class="nav-counter" id="nav-counter">1 of 1</span>
+    <button class="nav-btn primary" id="next-btn" onclick="navigate(1)">Next →</button>
+  </nav>
+</div>
+
+<!-- SWITCH MODAL -->
+<div class="modal-backdrop" id="switch-modal" onclick="closeSwitchIfBack(event)">
+  <div class="switch-modal">
+    <div class="switch-title">Switch name</div>
+    <div class="switch-sub">Were you signed in as the wrong person? Select your name below.</div>
+    <input class="switch-search" type="text" placeholder="Search…" oninput="filterSwitch(this.value)" id="switch-search" autocomplete="off">
+    <div class="switch-list" id="switch-list"></div>
+    <button class="switch-cancel" onclick="closeSwitchModal()">Cancel — keep current name</button>
+  </div>
+</div>
+
+<script>
+const BACKEND_URL = https://script.google.com/macros/s/AKfycbz6eEDV2aZ7k1xoCzSq97RbrtHUIWA-GNBzkqc82h76pGR1_WZm_w5pGMvX-4YcIwS_/exec;
+
+// ── ROSTER — replace with your actual class names ─────────────────────────
+const ROSTER = [
+  "Aaliyah Johnson","Caleb Harris","Chloe Robinson","Devon Mitchell",
+  "Elijah Carter","Grace Nguyen","Isaiah Williams","Jordan Kim",
+  "Kayla Thompson","Liam Brooks","Madison Turner","Marcus Thompson",
+  "Maya Patel","Noah Anderson","Olivia Davis","Priya Sharma",
+  "Ryan Foster","Sofia Lopez","Tyler Barnes","Zoe Peterson"
+].sort();
+
+// ── LESSONS ───────────────────────────────────────────────────────────────
+const LESSONS = [
+  { id:"u1-w1-d1", active:true, date:"2025-08-18", unit:1, week:1, day:1,
+    title:"Welcome to Foundations of Engineering & Technology",
+    tag:"Unit 1 · Week 1 · Day 1",
+    slides:[
+      { type:"bellringer", title:"What did you use before arriving at school today?",
+        bullets:["List three engineered items you used before arriving today.",
+          "For each: what problem does it solve? Who might have designed it?"],
+        interaction:{type:"write",label:"Think & type",prompt:"List your three items and one sentence about each.",timerMins:3}},
+      { type:"minilesson", title:"What is engineering? (Part 1 of 3)",
+        bullets:["The process of designing solutions to problems using science, math, and creativity.",
+          "Engineers identify needs, design solutions, build prototypes, and improve until it works.",
+          "Engineering is everywhere — from phones to bridges to irrigation systems."],
+        interaction:{type:"write",label:"Think & type",prompt:"In your own words, what does an engineer do? (2–3 sentences — no copying the slide)",timerMins:2}},
+      { type:"minilesson", title:"Engineers ask three questions (Part 2 of 3)",
+        bullets:["1. What is the problem? — Understand before you design.",
+          "2. Who is affected? — Engineering serves people.",
+          "3. What are the limits? — Constraints shape the solution."],
+        interaction:{type:"poll",label:"Quick poll",prompt:"Which question do engineers spend the MOST time on?",
+          options:["What is the problem?","Who is affected?","What are the limits?"]}},
+      { type:"activity", title:"Engineering scavenger hunt",
+        bullets:["In teams of 3 — find engineered items around the classroom.",
+          "Record: item, purpose, problem it solves, which engineer designed it.",
+          "Find at least 5 items. Most surprising find gets shared with the class."],
+        interaction:{type:"write",label:"Share out",prompt:"What was your team's most surprising find — and why?",timerMins:12}},
+      { type:"biblical", title:"Biblical integration — Genesis 1:26–28",
+        bullets:["\"Then God said, 'Let us make mankind in our image…'\" — Genesis 1:26",
+          "Humans are uniquely created with the ability to design, build, and solve problems.",
+          "Dominion means responsible stewardship — not exploitation."],
+        interaction:{type:"write",label:"Reflection",prompt:"How does your ability to create and design reflect being made in God's image? (2–3 sentences)",timerMins:3}},
+      { type:"exitticket", title:"Exit ticket — Day 1",
+        bullets:["Write 2–3 sentences.","Submit before you leave."],
+        interaction:{type:"write",label:"Exit ticket",prompt:"What surprised you most about engineering today?",timerMins:4}}
+    ]},
+  { id:"u1-w1-d2", active:true, date:"2025-08-19", unit:1, week:1, day:2,
+    title:"What Engineers Do", tag:"Unit 1 · Week 1 · Day 2",
+    slides:[
+      { type:"bellringer", title:"What ONE technology could you not live without?",
+        bullets:["Write your answer in your Engineering Notebook.",
+          "Why? What problem does it solve in your daily life?",
+          "Who designed it — what type of engineer?"],
+        interaction:{type:"write",label:"Think & type",prompt:"Name ONE technology and explain why you can't live without it.",timerMins:3}},
+      { type:"minilesson", title:"Engineering disciplines (Part 1 of 2)",
+        bullets:["Civil Engineering — roads, bridges, buildings.",
+          "Mechanical Engineering — engines, machines, robotics.",
+          "Electrical Engineering — circuits, phones, power grids.",
+          "Agricultural Engineering — irrigation, farm equipment."],
+        interaction:{type:"poll",label:"Quick poll",prompt:"Which discipline connects most to your bellringer answer?",
+          options:["Civil","Mechanical","Electrical","Agricultural"]}},
+      { type:"exitticket", title:"Exit ticket — Day 2",
+        bullets:["2–3 sentences.","Submit before you leave."],
+        interaction:{type:"write",label:"Exit ticket",prompt:"Which engineering field interests you most right now — and why?",timerMins:4}}
+    ]}
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+let user = null, lesson = null, slide = 0, responses = {}, queue = [];
+let timer = {interval:null, secs:0, running:false};
+let pickerSelected = null;
+
+function initials(n){ return n.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2); }
+function fmt(s){ const m=Math.floor(s/60); return m+':'+(s%60<10?'0':'')+(s%60); }
+function save(k,v){ try{localStorage.setItem(k,JSON.stringify(v))}catch(e){} }
+function load(k){ try{return JSON.parse(localStorage.getItem(k))}catch(e){return null} }
+
+// ── PICKER ────────────────────────────────────────────────────────────────
+function buildList(container, roster, onPick){
+  container.innerHTML='';
+  roster.forEach(name=>{
+    const el=document.createElement('div');
+    el.className='name-item'; el.dataset.name=name;
+    el.innerHTML=`<div class="name-avatar">${initials(name)}</div><div class="name-text">${name}</div>`;
+    el.onclick=()=>onPick(name,el,container);
+    container.appendChild(el);
+  });
+}
+
+function filterNames(q){
+  const lq=q.toLowerCase();
+  let vis=0;
+  document.querySelectorAll('#name-list .name-item').forEach(el=>{
+    const show=el.dataset.name.toLowerCase().includes(lq);
+    el.classList.toggle('hidden-item',!show);
+    if(show) vis++;
+  });
+  document.getElementById('no-results').classList.toggle('hidden',vis>0);
+}
+
+function selectPicker(name, el, container){
+  container.querySelectorAll('.name-item').forEach(i=>i.classList.remove('selected'));
+  el.classList.add('selected');
+  pickerSelected=name;
+  const btn=document.getElementById('confirm-btn');
+  btn.disabled=false;
+  btn.textContent=`That's me — continue as ${name.split(' ')[0]}`;
+}
+
+function confirmName(){
+  if(!pickerSelected) return;
+  user={name:pickerSelected, init:initials(pickerSelected)};
+  save('fet_user',user);
+  startApp();
+}
+
+// ── SWITCH MODAL ──────────────────────────────────────────────────────────
+function openSwitchModal(){
+  buildList(document.getElementById('switch-list'), ROSTER, (name,el,c)=>{
+    user={name,init:initials(name)};
+    save('fet_user',user);
+    document.getElementById('user-avatar').textContent=user.init;
+    document.getElementById('user-name-el').textContent=user.name.split(' ')[0];
+    closeSwitchModal();
+  });
+  document.getElementById('switch-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('switch-search').focus(),50);
+}
+function filterSwitch(q){
+  const lq=q.toLowerCase();
+  document.querySelectorAll('#switch-list .name-item').forEach(el=>
+    el.classList.toggle('hidden-item',!el.dataset.name.toLowerCase().includes(lq)));
+}
+function closeSwitchModal(){ document.getElementById('switch-modal').classList.remove('open'); document.getElementById('switch-search').value=''; }
+function closeSwitchIfBack(e){ if(e.target===document.getElementById('switch-modal')) closeSwitchModal(); }
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+function init(){
+  const saved=load('fet_user');
+  if(saved&&saved.name){ user=saved; startApp(); }
+  else buildList(document.getElementById('name-list'), ROSTER, selectPicker);
+}
+
+function startApp(){
+  document.getElementById('picker-screen').style.display='none';
+  document.getElementById('lesson-app').style.display='block';
+  document.getElementById('user-avatar').textContent=user.init;
+  document.getElementById('user-name-el').textContent=user.name.split(' ')[0];
+  const today=new Date().toISOString().split('T')[0];
+  lesson=LESSONS.find(l=>l.active&&l.date===today)||LESSONS.filter(l=>l.active).slice(-1)[0]||LESSONS[0];
+  slide=0;
+  responses=load(`fet_${user.name}_${lesson.id}`)||{};
+  render();
+}
+
+window.addEventListener('online',()=>{ document.getElementById('offline-banner').style.display='none'; flush(); });
+window.addEventListener('offline',()=>{ document.getElementById('offline-banner').style.display='flex'; });
+
+// ── RESPONSE ──────────────────────────────────────────────────────────────
+function saveResp(idx,val){
+  responses[idx]=val;
+  save(`fet_${user.name}_${lesson.id}`,responses);
+  push(idx,val);
+}
+async function push(idx,val){
+  const sl=lesson.slides[idx];
+  const p={action:"submitResponse",name:user.name,lessonId:lesson.id,
+    lessonTitle:lesson.title,slideIndex:idx,slideType:sl.type,slideTitle:sl.title,
+    responseType:sl.interaction.type,response:String(val),
+    unit:lesson.unit,week:lesson.week,day:lesson.day};
+  if(!navigator.onLine||BACKEND_URL==="YOUR_APPS_SCRIPT_URL_HERE"){queue.push(p);return;}
+  try{await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify(p)});}
+  catch(e){queue.push(p);}
+}
+async function flush(){
+  while(queue.length&&BACKEND_URL!=="YOUR_APPS_SCRIPT_URL_HERE"){
+    const item=queue.shift();
+    try{await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify(item)});}
+    catch(e){queue.unshift(item);break;}
+  }
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+const LABELS={bellringer:'Bellringer',minilesson:'Mini-lesson',activity:'Activity',biblical:'Faith connection',exitticket:'Exit ticket'};
+
+function render(){
+  clearTimer();
+  const sl=lesson.slides[slide];
+  const ix=sl.interaction;
+  const done=responses[slide]!==undefined;
+  const saved=responses[slide];
+
+  document.getElementById('bar-tag').textContent=lesson.tag;
+  document.getElementById('bar-title').textContent=lesson.title;
+  document.getElementById('nav-counter').textContent=`${slide+1} of ${lesson.slides.length}`;
+  document.getElementById('prev-btn').disabled=slide===0;
+  document.getElementById('next-btn').disabled=slide===lesson.slides.length-1;
+  document.getElementById('prog').style.width=((slide+1)/lesson.slides.length*100)+'%';
+
+  const hdr=ix.type==='poll'?'hdr-poll':sl.type==='exitticket'?'hdr-exit':'hdr-write';
+  let ixHTML='';
+
+  if(ix.type==='write'){
+    ixHTML=`<div class="interact-box">
+      <div class="interact-header ${hdr}">
+        <span class="interact-label">${ix.label}</span>
+        ${ix.timerMins?`<span class="interact-mins">${ix.timerMins} min</span>`:''}
+      </div>
+      <div class="interact-body">
+        ${ix.timerMins?`<div class="timer-row">
+          <span class="timer-display" id="td">${fmt(ix.timerMins*60)}</span>
+          <span class="timer-label">remaining</span>
+          <button class="timer-btn" id="tb" onclick="toggleTimer(${ix.timerMins*60})">Start timer</button>
+        </div>`:''}
+        <p class="interact-prompt">${ix.prompt}</p>
+        ${done
+          ?`<div class="submitted-state">
+              <div class="submitted-check">✓</div>
+              <div><div class="submitted-label">Response submitted</div>
+              <div class="submitted-text">"${saved}"</div></div>
+            </div>`
+          :`<textarea class="resp" id="ta" placeholder="Type your response here…" oninput="onInput()" rows="4"></textarea>
+            <div class="submit-row">
+              <span class="char-count" id="cc">0 characters</span>
+              <button class="submit-btn" id="sb" onclick="submitWrite()" disabled>Submit</button>
+            </div>`}
+      </div></div>`;
+  } else if(ix.type==='poll'){
+    ixHTML=`<div class="interact-box">
+      <div class="interact-header hdr-poll"><span class="interact-label">${ix.label}</span></div>
+      <div class="interact-body">
+        <p class="interact-prompt">${ix.prompt}</p>
+        <div class="poll-opts">
+          ${ix.options.map((o,i)=>`
+            <div class="poll-opt ${done&&saved==i?'selected':''} ${done?'voted':''}"
+                 onclick="${done?'':'castVote('+i+')'}">
+              <span class="poll-letter">${String.fromCharCode(65+i)}</span>
+              <span>${o}</span>
+            </div>`).join('')}
+        </div>
+        ${done?`<div class="vote-confirmed">✓ Vote recorded — your teacher can see it</div>`:''}
+      </div></div>`;
+  }
+
+  document.getElementById('lesson-body').innerHTML=`
+    <div class="slide-card">
+      <div class="slide-card-header">
+        <span class="type-chip chip-${sl.type}">${LABELS[sl.type]||sl.type}</span>
+        <div class="slide-title">${sl.title}</div>
+      </div>
+      <div class="slide-card-body">
+        <div class="bullet-list">
+          ${sl.bullets.map(b=>`<div class="bullet-row">
+            <div class="bullet-dot dot-${sl.type}"></div>
+            <div class="bullet-text">${b}</div>
+          </div>`).join('')}
+        </div>
+        ${ixHTML}
+      </div>
+    </div>`;
+}
+
+// ── INTERACTIONS ──────────────────────────────────────────────────────────
+function onInput(){
+  const ta=document.getElementById('ta'),sb=document.getElementById('sb'),cc=document.getElementById('cc');
+  if(!ta) return;
+  const n=ta.value.trim().length;
+  cc.textContent=n+' character'+(n===1?'':'s');
+  sb.disabled=n<5;
+}
+function submitWrite(){
+  const val=document.getElementById('ta')?.value?.trim();
+  if(!val||val.length<5) return;
+  saveResp(slide,val); render();
+}
+function castVote(i){
+  if(responses[slide]!==undefined) return;
+  saveResp(slide,i); render();
+}
+
+// ── TIMER ─────────────────────────────────────────────────────────────────
+function clearTimer(){
+  if(timer.interval) clearInterval(timer.interval);
+  timer={interval:null,secs:0,running:false};
+}
+function toggleTimer(total){
+  const btn=document.getElementById('tb'),disp=document.getElementById('td');
+  if(timer.running){clearInterval(timer.interval);timer.running=false;if(btn){btn.textContent='Resume';btn.classList.remove('running');}return;}
+  if(!timer.secs) timer.secs=total;
+  timer.running=true;
+  if(btn){btn.textContent='Pause';btn.classList.add('running');}
+  timer.interval=setInterval(()=>{
+    timer.secs--;
+    const s=Math.max(0,timer.secs);
+    if(disp){disp.textContent=fmt(s);disp.classList.toggle('urgent',s<=30&&s>0);}
+    if(timer.secs<=0){clearInterval(timer.interval);timer.running=false;if(btn){btn.textContent="Time's up";btn.classList.remove('running');btn.classList.add('done');btn.disabled=true;}}
+  },1000);
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────────
+function navigate(dir){
+  const n=slide+dir;
+  if(n<0||n>=lesson.slides.length) return;
+  clearTimer(); slide=n; render();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+init();
+</script>
+</body>
+</html>

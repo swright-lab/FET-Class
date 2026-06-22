@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FET — Teacher Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --navy:#1E2D5E; --orange:#E8622A; --teal:#1A7A6E; --gold:#F5A623;
+  --bg:#F4F6FB; --white:#FFFFFF; --text:#1A1A2E; --muted:#4A5568;
+  --border:#E2E8F0; --green:#1D6A3A; --purple:#6B3FA0; --red:#C53030;
+  --radius:12px; --radius-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+
+/* TOP BAR */
+.top-bar{background:var(--navy);padding:0 20px;height:56px;display:flex;
+  align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:200}
+.top-bar-left{display:flex;align-items:center;gap:14px}
+.top-bar-logo{font-size:13px;font-weight:700;color:var(--white);letter-spacing:.02em}
+.top-bar-lesson{font-size:13px;color:rgba(255,255,255,.65)}
+.tab-bar{display:flex;gap:2px}
+.tab{padding:6px 16px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;
+  color:rgba(255,255,255,.6);border:none;background:transparent;transition:all .15s}
+.tab:hover{color:var(--white);background:rgba(255,255,255,.08)}
+.tab.active{background:rgba(255,255,255,.15);color:var(--white)}
+
+/* LAYOUT */
+.main{display:flex;flex:1;overflow:hidden;height:calc(100vh - 56px)}
+.sidebar{width:260px;background:var(--white);border-right:1px solid var(--border);
+  overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column}
+.content-area{flex:1;overflow-y:auto;padding:20px}
+
+/* SIDEBAR */
+.sidebar-section{padding:14px 16px;border-bottom:1px solid var(--border)}
+.sidebar-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:10px}
+.lesson-item{padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;
+  margin-bottom:4px;transition:all .15s;border:1.5px solid transparent}
+.lesson-item:hover{background:var(--bg)}
+.lesson-item.active{background:#EEF2FF;border-color:#C7D2FE}
+.lesson-item-tag{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;
+  letter-spacing:.04em;margin-bottom:3px}
+.lesson-item-title{font-size:13px;color:var(--text);font-weight:500;line-height:1.3}
+.lesson-item-meta{display:flex;align-items:center;gap:6px;margin-top:5px}
+.lesson-pill{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600}
+.pill-active{background:#D1FAE5;color:#065F46}
+.pill-inactive{background:#FEE2E2;color:#991B1B}
+.pill-today{background:#FEF3C7;color:#92400E}
+.skip-btn{font-size:11px;padding:3px 8px;border:1px solid var(--border);border-radius:5px;
+  background:var(--white);color:var(--muted);cursor:pointer;margin-left:auto}
+.skip-btn:hover{background:var(--bg)}
+.jump-today{width:100%;padding:8px;background:var(--navy);color:var(--white);
+  border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:500;
+  cursor:pointer;margin-bottom:8px;font-family:inherit}
+.jump-today:hover{background:#16235a}
+
+/* STAT CARDS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--border);
+  padding:16px 18px}
+.stat-num{font-size:28px;font-weight:600;color:var(--text);line-height:1}
+.stat-label{font-size:12px;color:var(--muted);margin-top:4px}
+.stat-trend{font-size:11px;color:var(--green);margin-top:4px;font-weight:500}
+
+/* LIVE BADGE */
+.live-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;
+  color:var(--teal);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);
+  animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* SECTION CARDS */
+.section-card{background:var(--white);border-radius:var(--radius);
+  border:1px solid var(--border);margin-bottom:16px;overflow:hidden}
+.section-header{padding:14px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between}
+.section-title{font-size:14px;font-weight:600;color:var(--navy)}
+.section-body{padding:16px 18px}
+
+/* SLIDE SELECTOR */
+.slide-tabs{display:flex;gap:6px;flex-wrap:wrap;padding:12px 18px;
+  border-bottom:1px solid var(--border)}
+.slide-tab{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;
+  cursor:pointer;border:1.5px solid var(--border);background:var(--white);
+  color:var(--muted);transition:all .15s}
+.slide-tab:hover{background:var(--bg);border-color:#CBD5E0}
+.slide-tab.active{background:var(--navy);color:var(--white);border-color:var(--navy)}
+
+/* RESPONSES */
+.response-list{display:flex;flex-direction:column;gap:8px}
+.response-card{padding:12px 14px;border:1px solid var(--border);
+  border-radius:var(--radius-sm);transition:all .15s}
+.response-card:hover{border-color:#CBD5E0}
+.response-card.highlighted{border-color:var(--gold);background:#FFFBEB}
+.response-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.response-name{font-size:12px;font-weight:600;color:var(--navy)}
+.response-time{font-size:11px;color:var(--muted)}
+.response-text{font-size:13px;color:var(--text);line-height:1.55}
+.response-actions{display:flex;gap:6px;margin-top:8px}
+.resp-action-btn{font-size:11px;padding:3px 10px;border:1px solid var(--border);
+  border-radius:5px;background:var(--white);color:var(--muted);cursor:pointer}
+.resp-action-btn:hover{background:var(--bg)}
+.resp-action-btn.on{background:#FEF3C7;border-color:var(--gold);color:#92400E}
+.empty-state{text-align:center;padding:32px;color:var(--muted);font-size:13px;line-height:1.6}
+.empty-icon{font-size:28px;margin-bottom:8px}
+
+/* POLL CHART */
+.poll-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.poll-opt-label{font-size:13px;font-weight:600;color:var(--text);min-width:20px}
+.poll-bar-wrap{flex:1;height:22px;background:var(--bg);border-radius:4px;overflow:hidden}
+.poll-bar{height:100%;background:var(--teal);border-radius:4px;transition:width .5s ease;
+  min-width:0}
+.poll-pct{font-size:12px;color:var(--muted);min-width:38px;text-align:right}
+.poll-count{font-size:12px;color:var(--muted);min-width:24px}
+
+/* NOTES */
+.notes-box{background:var(--bg);border-radius:var(--radius-sm);
+  padding:14px 16px;font-size:13px;color:var(--text);line-height:1.65}
+.notes-section{margin-bottom:12px}
+.notes-section:last-child{margin-bottom:0}
+.notes-section-title{font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--muted);margin-bottom:5px}
+.notes-bullet{display:flex;gap:8px;margin-bottom:4px}
+.notes-bullet::before{content:"•";color:var(--teal);font-weight:700;flex-shrink:0}
+
+/* EDITOR */
+.editor-panel{display:none}
+.editor-panel.active{display:block}
+.form-row{margin-bottom:14px}
+.form-label{font-size:12px;font-weight:600;color:var(--navy);margin-bottom:5px;display:block}
+.form-input,.form-select,.form-textarea{width:100%;padding:8px 11px;
+  border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  font-size:13px;font-family:inherit;color:var(--text);background:var(--white);
+  transition:border-color .15s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--teal)}
+.form-textarea{resize:vertical;min-height:72px;line-height:1.5}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.slide-editor-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.slide-editor-item{padding:12px 14px;border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);background:var(--white);cursor:pointer;
+  display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+.slide-editor-item:hover{border-color:#CBD5E0;background:var(--bg)}
+.slide-editor-item.editing{border-color:var(--teal);background:#F0FDF9}
+.slide-type-chip{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;
+  text-transform:uppercase;letter-spacing:.04em}
+.chip-bellringer{background:#FEE2E2;color:var(--red)}
+.chip-minilesson{background:#EEF2FF;color:var(--navy)}
+.chip-activity{background:#D1FAE5;color:var(--green)}
+.chip-biblical{background:#E0FDF4;color:var(--teal)}
+.chip-exitticket{background:#FEF3C7;color:#92400E}
+.editor-actions{display:flex;gap:8px;margin-top:4px}
+.btn{padding:8px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;
+  cursor:pointer;border:none;font-family:inherit;transition:all .15s}
+.btn-primary{background:var(--teal);color:var(--white)}
+.btn-primary:hover{background:#145f55}
+.btn-secondary{background:var(--white);color:var(--text);border:1.5px solid var(--border)}
+.btn-secondary:hover{background:var(--bg)}
+.btn-danger{background:#FEE2E2;color:var(--red);border:1px solid #FECACA}
+.btn-danger:hover{background:#FECACA}
+.save-banner{background:#D1FAE5;border:1px solid #6EE7B7;border-radius:var(--radius-sm);
+  padding:10px 14px;font-size:13px;color:#065F46;margin-bottom:14px;display:none;
+  align-items:center;gap:8px}
+
+/* SKIP OVERLAY */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;
+  display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:var(--radius);padding:28px;
+  max-width:380px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-title{font-size:16px;font-weight:600;color:var(--navy);margin-bottom:8px}
+.modal-body{font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:20px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end}
+
+/* HIGHLIGHT DISPLAY */
+.highlight-display{background:var(--navy);border-radius:var(--radius);
+  padding:20px 22px;margin-bottom:14px;display:none}
+.highlight-display.visible{display:block}
+.highlight-label{font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;color:rgba(255,255,255,.5);margin-bottom:6px}
+.highlight-quote{font-size:15px;color:var(--white);line-height:1.6;font-style:italic}
+.highlight-name{font-size:12px;color:rgba(255,255,255,.5);margin-top:8px}
+
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="top-bar-left">
+    <div class="top-bar-logo">FET Teacher Dashboard</div>
+    <div class="top-bar-lesson" id="top-lesson-label">Unit 1 · Week 1 · Day 1 — Welcome to Foundations of Engineering</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('live')">Live class</button>
+    <button class="tab" onclick="switchTab('editor')">Edit lessons</button>
+  </div>
+</div>
+
+<!-- SKIP MODAL -->
+<div class="modal-overlay" id="skip-modal">
+  <div class="modal">
+    <div class="modal-title" id="skip-modal-title">Skip this lesson?</div>
+    <div class="modal-body">This lesson will be marked inactive. Students will automatically see the next active lesson. You can re-activate it at any time from the lesson list.</div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeSkip()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmSkip()">Skip lesson</button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Lessons</div>
+      <button class="jump-today" onclick="jumpToToday()">Jump to today</button>
+      <div id="lesson-list"></div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content-area">
+
+    <!-- LIVE TAB -->
+    <div id="tab-live">
+
+      <!-- Stats -->
+      <div class="stats-row" id="stats-row">
+        <div class="stat-card">
+          <div class="stat-num" id="stat-submitted">0</div>
+          <div class="stat-label">Submitted</div>
+          <div class="stat-trend" id="stat-trend">of 24 students</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-pct">0%</div>
+          <div class="stat-label">Completion</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-slide">1</div>
+          <div class="stat-label">Current slide</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-total">6</div>
+          <div class="stat-label">Total slides</div>
+        </div>
+      </div>
+
+      <!-- Highlighted response -->
+      <div class="highlight-display" id="highlight-display">
+        <div class="highlight-label">Highlighted for class</div>
+        <div class="highlight-quote" id="highlight-quote"></div>
+        <div class="highlight-name" id="highlight-name"></div>
+      </div>
+
+      <!-- Slide selector + responses -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title" id="responses-header">
+            <span class="live-badge"><span class="live-dot"></span> Live responses</span>
+          </div>
+          <div style="font-size:12px;color:var(--muted)" id="slide-type-label"></div>
+        </div>
+        <div class="slide-tabs" id="slide-tabs"></div>
+        <div class="section-body">
+          <div id="response-area"></div>
+        </div>
+      </div>
+
+      <!-- Speaker notes -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">Speaker notes</div>
+        </div>
+        <div class="section-body">
+          <div class="notes-box" id="notes-box">
+            Select a lesson to see speaker notes.
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- EDITOR TAB -->
+    <div id="tab-editor" class="hidden">
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">Visual lesson editor</div>
+          <div style="font-size:12px;color:var(--muted)">Changes update the live app instantly</div>
+        </div>
+        <div class="section-body">
+          <div class="save-banner" id="save-banner">
+            ✓ Lesson saved — students will see updates on next page load.
+          </div>
+
+          <!-- Lesson meta -->
+          <div style="background:var(--bg);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px">
+            <div class="sidebar-label" style="margin-bottom:10px">Lesson info</div>
+            <div class="form-row-2">
+              <div class="form-row" style="margin:0">
+                <label class="form-label">Date</label>
+                <input class="form-input" type="date" id="ed-date">
+              </div>
+              <div class="form-row" style="margin:0">
+                <label class="form-label">Status</label>
+                <select class="form-select" id="ed-active">
+                  <option value="true">Active — students can see it</option>
+                  <option value="false">Inactive — skipped</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row" style="margin-top:10px;margin-bottom:0">
+              <label class="form-label">Lesson title</label>
+              <input class="form-input" type="text" id="ed-title" placeholder="e.g. What Is Engineering?">
+            </div>
+          </div>
+
+          <!-- Slide list -->
+          <div class="sidebar-label" style="margin-bottom:8px">Slides in this lesson</div>
+          <div class="slide-editor-list" id="slide-editor-list"></div>
+
+          <!-- Slide editor -->
+          <div id="slide-editor-form" class="hidden">
+            <div style="background:var(--bg);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px">
+              <div class="sidebar-label" style="margin-bottom:10px">Edit slide</div>
+              <div class="form-row">
+                <label class="form-label">Slide type</label>
+                <select class="form-select" id="ed-slide-type">
+                  <option value="bellringer">Bellringer</option>
+                  <option value="minilesson">Mini-lesson</option>
+                  <option value="activity">Activity</option>
+                  <option value="biblical">Biblical integration</option>
+                  <option value="exitticket">Exit ticket</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label class="form-label">Slide title</label>
+                <input class="form-input" type="text" id="ed-slide-title" placeholder="Slide title">
+              </div>
+              <div class="form-row">
+                <label class="form-label">Bullet points (one per line)</label>
+                <textarea class="form-textarea" id="ed-slide-bullets" rows="4"
+                  placeholder="Each line becomes one bullet point."></textarea>
+              </div>
+              <div class="form-row">
+                <label class="form-label">Interaction type</label>
+                <select class="form-select" id="ed-ix-type" onchange="toggleIxFields()">
+                  <option value="write">Written response</option>
+                  <option value="poll">Multiple choice poll</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label class="form-label">Prompt (what students see)</label>
+                <textarea class="form-textarea" id="ed-ix-prompt" rows="2"
+                  placeholder="What do you want students to respond to?"></textarea>
+              </div>
+              <div id="ed-timer-row" class="form-row">
+                <label class="form-label">Timer (minutes, 0 = no timer)</label>
+                <input class="form-input" type="number" id="ed-ix-timer" min="0" max="30" value="3">
+              </div>
+              <div id="ed-poll-row" class="form-row hidden">
+                <label class="form-label">Poll options (one per line)</label>
+                <textarea class="form-textarea" id="ed-poll-opts" rows="3"
+                  placeholder="Option A&#10;Option B&#10;Option C"></textarea>
+              </div>
+              <div class="editor-actions">
+                <button class="btn btn-primary" onclick="saveSlide()">Save slide</button>
+                <button class="btn btn-secondary" onclick="cancelSlideEdit()">Cancel</button>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-secondary" onclick="addNewSlide()"
+            style="width:100%;margin-bottom:14px">+ Add slide</button>
+
+          <div class="editor-actions">
+            <button class="btn btn-primary" onclick="saveLesson()">Save lesson</button>
+            <button class="btn btn-secondary" onclick="exportData()">Export as data file</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── LESSON DATA ───────────────────────────────────────────────────────────
+let LESSONS = [
+  {
+    id:"u1-w1-d1", active:true, date:"2025-08-18",
+    unit:1, week:1, day:1,
+    title:"Welcome to Foundations of Engineering & Technology",
+    tag:"Unit 1 · Week 1 · Day 1",
+    slides:[
+      { type:"bellringer", title:"What did you use before arriving at school today?",
+        bullets:["List three engineered items you used before arriving today.","For each: what problem does it solve? Who might have designed it?"],
+        interaction:{type:"write",label:"Think & type",prompt:"List your three items and one sentence about each.",timerMins:3}
+      },
+      { type:"minilesson", title:"What is engineering? (Part 1 of 3)",
+        bullets:["The process of designing solutions to problems using science, math, and creativity.","Engineers identify needs, design solutions, build prototypes, and improve until it works."],
+        interaction:{type:"write",label:"Think & type",prompt:"In your own words, what does an engineer do? (2–3 sentences)",timerMins:2}
+      },
+      { type:"minilesson", title:"Engineers ask three questions (Part 2 of 3)",
+        bullets:["1. What is the problem? — Understand before you design.","2. Who is affected? — Engineering serves people.","3. What are the limits? — Constraints shape the solution."],
+        interaction:{type:"poll",label:"Quick poll",prompt:"Which question do engineers spend the MOST time on?",options:["What is the problem?","Who is affected?","What are the limits?"]}
+      },
+      { type:"activity", title:"Engineering scavenger hunt",
+        bullets:["In teams of 3 — find engineered items around the classroom.","Record: item, purpose, problem it solves, which engineer designed it.","Find at least 5 items."],
+        interaction:{type:"write",label:"Share out",prompt:"What was your team's most surprising find — and why?",timerMins:12}
+      },
+      { type:"biblical", title:"Biblical integration — Genesis 1:26–28",
+        bullets:["\"Then God said, 'Let us make mankind in our image…'\" — Genesis 1:26","Humans are uniquely created with the ability to design and solve problems.","Dominion means responsible stewardship — not exploitation."],
+        interaction:{type:"write",label:"Reflection",prompt:"How does your ability to create and design reflect being made in God's image?",timerMins:3}
+      },
+      { type:"exitticket", title:"Exit ticket — Day 1",
+        bullets:["Write 2–3 sentences.","Submit before you leave."],
+        interaction:{type:"write",label:"Exit ticket",prompt:"What surprised you most about engineering today?",timerMins:4}
+      }
+    ],
+    teacherNotes:{
+      purpose:"Set the tone for the year. Engagement and culture first, logistics second.",
+      during:["Circulate during bellringer — do not stand at the front.","Listen for surprising items (shoes, toothbrush, faucet) — great cold-call material.","On the poll: most engineers say Q1 is hardest — defining the problem wrong means every solution is wrong.","Pull 2–3 highlighted responses to display before advancing past each mini-lesson chunk."],
+      transition:"End with: 'Hold onto those reflections. We'll come back to questions like these all year.'"
+    }
+  },
+  {
+    id:"u1-w1-d2", active:true, date:"2025-08-19",
+    unit:1, week:1, day:2,
+    title:"What Engineers Do",
+    tag:"Unit 1 · Week 1 · Day 2",
+    slides:[
+      { type:"bellringer", title:"What ONE technology could you not live without?",
+        bullets:["Write your answer in your Engineering Notebook.","Why? What problem does it solve in your daily life?","Who designed it — what type of engineer?"],
+        interaction:{type:"write",label:"Think & type",prompt:"Name ONE technology and explain why you can't live without it.",timerMins:3}
+      },
+      { type:"minilesson", title:"Engineering disciplines (Part 1 of 2)",
+        bullets:["Civil Engineering — roads, bridges, buildings.","Mechanical Engineering — engines, machines, robotics.","Electrical Engineering — circuits, phones, power grids.","Agricultural Engineering — irrigation, farm equipment."],
+        interaction:{type:"poll",label:"Quick poll",prompt:"Which discipline connects most to your bellringer answer?",options:["Civil","Mechanical","Electrical","Agricultural"]}
+      },
+      { type:"exitticket", title:"Exit ticket — Day 2",
+        bullets:["2–3 sentences.","Submit before you leave."],
+        interaction:{type:"write",label:"Exit ticket",prompt:"Which engineering field interests you most right now — and why?",timerMins:4}
+      }
+    ],
+    teacherNotes:{
+      purpose:"Expand students' mental model of what engineering covers.",
+      during:["Cold-call after bellringer: most will say phones — 'Who made the phone? What type of engineer?'","Walk through disciplines briskly — 15 seconds each. Breadth over depth.","Use poll results live: 'A lot of you said Electrical — that's also what makes Robotics work.'"],
+      transition:"Use exit ticket responses to form intentional groups for Day 3's tower challenge."
+    }
+  },
+  {
+    id:"u1-w1-d3", active:false, date:"2025-08-20",
+    unit:1, week:1, day:3,
+    title:"Engineering Teamwork Challenge",
+    tag:"Unit 1 · Week 1 · Day 3",
+    slides:[
+      { type:"bellringer", title:"Why is communication critical during emergencies?",
+        bullets:["Think of a real emergency — or imagine one.","What happens when communication fails?","What technologies help people communicate when normal systems are down?"],
+        interaction:{type:"write",label:"Think & type",prompt:"Describe your emergency scenario and one communication technology that would help.",timerMins:3}
+      },
+      { type:"exitticket", title:"Exit ticket — Day 3",
+        bullets:["Specific change + engineering reason.","Submit before you leave."],
+        interaction:{type:"write",label:"Exit ticket",prompt:"What would you do differently in the tower rebuild tomorrow? Name one specific change and explain the engineering reason.",timerMins:4}
+      }
+    ],
+    teacherNotes:{
+      purpose:"High-energy design challenge. Pre-stage materials before students arrive.",
+      during:["Enforce planning before building — students who skip planning struggle.","Ask 'Does this meet your criteria?' and 'Are you within your constraints?' — not 'Is it good?'"],
+      transition:"Exit ticket feeds directly into Day 4 redesign. Read tonight."
+    }
+  }
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+const BACKEND_URL = https://script.google.com/macros/s/AKfycbz6eEDV2aZ7k1xoCzSq97RbrtHUIWA-GNBzkqc82h76pGR1_WZm_w5pGMvX-4YcIwS_/exec;
+let currentLessonId = LESSONS.find(l=>l.active)?.id || LESSONS[0].id;
+let currentSlideIdx = 0;
+let editingSlideIdx = null;
+let skipTargetId = null;
+let pollInterval = null;
+
+// Simulated live responses for demo
+const SIM_RESPONSES = {
+  "u1-w1-d1": {
+    0:[{name:"Aaliyah J.",text:"My phone alarm, my sneakers (foam engineering!), and the cereal box I ate from.",time:"2 min ago"},{name:"Marcus T.",text:"Toaster, running water from the tap, and my backpack zipper.",time:"3 min ago"},{name:"Jordan K.",text:"Earbuds, the car that drove me here, and the traffic light on Oak Street.",time:"1 min ago"},{name:"Priya S.",text:"My retainer (biomedical engineering!), the bus I rode, and my deodorant container.",time:"just now"}],
+    1:[{name:"Devon M.",text:"An engineer takes a problem and figures out how to fix it using math and creativity.",time:"1 min ago"},{name:"Chloe R.",text:"They design things that work. Like someone had to design the chair I'm sitting in right now.",time:"2 min ago"},{name:"Isaiah W.",text:"Engineers are problem solvers who build things that help people do things they couldn't before.",time:"just now"}],
+    3:[{name:"Sofia L.",text:"We found the HVAC vent — never thought about who engineered that.",time:"5 min ago"},{name:"Caleb H.",text:"The whiteboard itself is engineered — the surface coating lets markers wipe off cleanly.",time:"4 min ago"},{name:"Zoe P.",text:"Door hinges! Simple but someone had to design every size and load capacity.",time:"3 min ago"}],
+    5:[{name:"Aaliyah J.",text:"I didn't know farming was engineering. That surprised me the most.",time:"just now"},{name:"Marcus T.",text:"I thought engineering was just computers. But the chair I'm sitting in was engineered.",time:"1 min ago"},{name:"Devon M.",text:"How much thought goes into things we never notice — like door hinges holding hundreds of pounds.",time:"2 min ago"}]
+  },
+  "u1-w1-d2":{
+    0:[{name:"Jordan K.",text:"My phone. Without it I couldn't communicate, navigate, or wake up on time.",time:"2 min ago"},{name:"Priya S.",text:"Running water. I'd have to walk miles to get water every day without it.",time:"3 min ago"}],
+    2:[{name:"Sofia L.",text:"Engineering is about solving real problems. I want to work in biomedical.",time:"just now"},{name:"Isaiah W.",text:"Electrical engineering — everything I use daily runs on circuits.",time:"1 min ago"}]
+  }
+};
+const SIM_VOTES = {
+  "u1-w1-d1":{ 2:{"0":11,"1":7,"2":6} },
+  "u1-w1-d2":{ 1:{"0":4,"1":8,"2":9,"3":3} }
+};
+let highlighted = {};
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+renderSidebar();
+loadLesson(currentLessonId);
+startPolling();
+
+function renderSidebar(){
+  const container = document.getElementById('lesson-list');
+  const today = new Date().toISOString().split('T')[0];
+  container.innerHTML = LESSONS.map(l=>{
+    const isToday = l.date === today;
+    const isCurrent = l.id === currentLessonId;
+    return `<div class="lesson-item ${isCurrent?'active':''}" onclick="loadLesson('${l.id}')">
+      <div class="lesson-item-tag">${l.tag}</div>
+      <div class="lesson-item-title">${l.title}</div>
+      <div class="lesson-item-meta">
+        <span class="lesson-pill ${l.active?(isToday?'pill-today':'pill-active'):'pill-inactive'}">
+          ${isToday?'Today':l.active?'Active':'Skipped'}
+        </span>
+        <button class="skip-btn" onclick="event.stopPropagation();openSkip('${l.id}')" title="${l.active?'Skip this lesson':'Re-activate'}">
+          ${l.active?'Skip':'Restore'}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function loadLesson(id){
+  currentLessonId = id;
+  currentSlideIdx = 0;
+  renderSidebar();
+  const lesson = LESSONS.find(l=>l.id===id);
+  document.getElementById('top-lesson-label').textContent = `${lesson.tag} — ${lesson.title}`;
+  renderSlideTabs();
+  renderResponses();
+  renderNotes();
+  updateStats();
+  loadEditorForLesson();
+}
+
+function jumpToToday(){
+  const today = new Date().toISOString().split('T')[0];
+  const lesson = LESSONS.find(l=>l.active && l.date===today) || LESSONS.filter(l=>l.active)[0];
+  if(lesson) loadLesson(lesson.id);
+}
+
+// ── LIVE TAB ──────────────────────────────────────────────────────────────
+function renderSlideTabs(){
+  const lesson = LESSONS.find(l=>l.id===currentLessonId);
+  const typeLabels = {bellringer:'Bell',minilesson:'Lesson',activity:'Activity',biblical:'Faith',exitticket:'Exit'};
+  document.getElementById('slide-tabs').innerHTML = lesson.slides.map((sl,i)=>`
+    <button class="slide-tab ${i===currentSlideIdx?'active':''}" onclick="selectSlide(${i})">
+      ${typeLabels[sl.type]||sl.type} ${i+1}
+    </button>`).join('');
+}
+
+function selectSlide(i){
+  currentSlideIdx = i;
+  renderSlideTabs();
+  renderResponses();
+  updateStats();
+}
+
+function renderResponses(){
+  const lesson = LESSONS.find(l=>l.id===currentLessonId);
+  const slide  = lesson.slides[currentSlideIdx];
+  const area   = document.getElementById('response-area');
+  document.getElementById('slide-type-label').textContent = slide.title;
+
+  const typeLabels={bellringer:'Bellringer',minilesson:'Mini-lesson',activity:'Activity',biblical:'Faith connection',exitticket:'Exit ticket'};
+  document.getElementById('responses-header').innerHTML =
+    `<span class="live-badge"><span class="live-dot"></span> ${typeLabels[slide.type]||slide.type}</span>`;
+
+  if(slide.interaction.type==='poll'){
+    const votes = (SIM_VOTES[currentLessonId]||{})[currentSlideIdx]||{};
+    const total = Object.values(votes).reduce((a,b)=>a+b,0)||1;
+    area.innerHTML = `
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">${slide.interaction.prompt}</p>
+      ${slide.interaction.options.map((o,i)=>{
+        const pct=Math.round((votes[i]||0)/total*100);
+        return`<div class="poll-bar-row">
+          <span class="poll-opt-label">${String.fromCharCode(65+i)}</span>
+          <div class="poll-bar-wrap"><div class="poll-bar" style="width:${pct}%"></div></div>
+          <span class="poll-pct">${pct}%</span>
+          <span class="poll-count">${votes[i]||0}</span>
+        </div>`;
+      }).join('')}
+      <p style="font-size:11px;color:var(--muted);margin-top:10px">${total} responses</p>`;
+    return;
+  }
+
+  const resps = (SIM_RESPONSES[currentLessonId]||{})[currentSlideIdx]||[];
+  if(!resps.length){
+    area.innerHTML=`<div class="empty-state"><div class="empty-icon">💬</div>
+      No responses yet for this slide.<br>They appear here as students submit.</div>`;
+    return;
+  }
+  area.innerHTML = `<div class="response-list">
+    ${resps.map((r,i)=>{
+      const key=`${currentLessonId}-${currentSlideIdx}-${i}`;
+      const isHL = highlighted[key];
+      return`<div class="response-card ${isHL?'highlighted':''}" id="rc-${i}">
+        <div class="response-meta">
+          <span class="response-name">${r.name}</span>
+          <span class="response-time">${r.time}</span>
+        </div>
+        <div class="response-text">${r.text}</div>
+        <div class="response-actions">
+          <button class="resp-action-btn ${isHL?'on':''}" id="hl-btn-${i}"
+            onclick="toggleHighlight(${i},'${r.name}','${r.text.replace(/'/g,"\\'")}')">
+            ${isHL?'★ Highlighted':'☆ Highlight for class'}
+          </button>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function toggleHighlight(i, name, text){
+  const key=`${currentLessonId}-${currentSlideIdx}-${i}`;
+  highlighted[key] = !highlighted[key];
+  const display = document.getElementById('highlight-display');
+  if(highlighted[key]){
+    document.getElementById('highlight-quote').textContent = `"${text}"`;
+    document.getElementById('highlight-name').textContent = `— ${name}`;
+    display.classList.add('visible');
+  } else {
+    const anyHL = Object.values(highlighted).some(v=>v);
+    if(!anyHL) display.classList.remove('visible');
+  }
+  renderResponses();
+}
+
+function renderNotes(){
+  const lesson = LESSONS.find(l=>l.id===currentLessonId);
+  const notes  = lesson.teacherNotes||{};
+  document.getElementById('notes-box').innerHTML = `
+    ${notes.purpose?`<div class="notes-section">
+      <div class="notes-section-title">Purpose</div>
+      <div>${notes.purpose}</div></div>`:''}
+    ${notes.during?.length?`<div class="notes-section">
+      <div class="notes-section-title">During the lesson</div>
+      ${notes.during.map(d=>`<div class="notes-bullet">${d}</div>`).join('')}
+    </div>`:''}
+    ${notes.transition?`<div class="notes-section">
+      <div class="notes-section-title">Transition</div>
+      <div style="font-style:italic;color:var(--muted)">${notes.transition}</div>
+    </div>`:''}`;
+}
+
+function updateStats(){
+  const lesson = LESSONS.find(l=>l.id===currentLessonId);
+  const resps  = (SIM_RESPONSES[currentLessonId]||{})[currentSlideIdx]||[];
+  const votes  = Object.values((SIM_VOTES[currentLessonId]||{})[currentSlideIdx]||{}).reduce((a,b)=>a+b,0);
+  const count  = lesson.slides[currentSlideIdx].interaction.type==='poll' ? votes : resps.length;
+  document.getElementById('stat-submitted').textContent = count;
+  document.getElementById('stat-pct').textContent = Math.round(count/24*100)+'%';
+  document.getElementById('stat-slide').textContent = currentSlideIdx+1;
+  document.getElementById('stat-total').textContent = lesson.slides.length;
+}
+
+function startPolling(){
+  if(BACKEND_URL==="YOUR_APPS_SCRIPT_URL_HERE") return;
+  pollInterval=setInterval(async()=>{
+    try{
+      const r=await fetch(`${BACKEND_URL}?action=getResponses&lessonId=${currentLessonId}`);
+      const data=await r.json();
+      if(data.responses) { /* merge into display */ renderResponses(); updateStats(); }
+    }catch(e){}
+  }, 8000);
+}
+
+// ── SKIP / RESTORE ────────────────────────────────────────────────────────
+function openSkip(id){
+  skipTargetId=id;
+  const lesson=LESSONS.find(l=>l.id===id);
+  document.getElementById('skip-modal-title').textContent =
+    lesson.active ? `Skip "${lesson.title}"?` : `Restore "${lesson.title}"?`;
+  document.querySelector('#skip-modal .modal-body').textContent =
+    lesson.active
+      ? 'This lesson will be marked inactive. Students will automatically see the next active lesson. You can restore it at any time.'
+      : 'This lesson will be made active again. Students will see it based on its date.';
+  document.querySelector('#skip-modal .btn-danger').textContent =
+    lesson.active ? 'Skip lesson' : 'Restore lesson';
+  document.getElementById('skip-modal').classList.add('open');
+}
+function closeSkip(){ document.getElementById('skip-modal').classList.remove('open'); skipTargetId=null; }
+function confirmSkip(){
+  const lesson=LESSONS.find(l=>l.id===skipTargetId);
+  lesson.active = !lesson.active;
+  closeSkip();
+  renderSidebar();
+  saveToStorage();
+}
+
+// ── TAB SWITCHING ─────────────────────────────────────────────────────────
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector(`.tab[onclick*="${tab}"]`).classList.add('active');
+  document.getElementById('tab-live').classList.toggle('hidden', tab!=='live');
+  document.getElementById('tab-editor').classList.toggle('hidden', tab!=='editor');
+  if(tab==='editor') loadEditorForLesson();
+}
+
+// ── VISUAL EDITOR ─────────────────────────────────────────────────────────
+function loadEditorForLesson(){
+  const lesson=LESSONS.find(l=>l.id===currentLessonId);
+  document.getElementById('ed-title').value = lesson.title;
+  document.getElementById('ed-date').value  = lesson.date;
+  document.getElementById('ed-active').value = String(lesson.active);
+  renderSlideEditorList();
+  document.getElementById('slide-editor-form').classList.add('hidden');
+  editingSlideIdx=null;
+}
+
+function renderSlideEditorList(){
+  const lesson=LESSONS.find(l=>l.id===currentLessonId);
+  const chipClass={bellringer:'chip-bellringer',minilesson:'chip-minilesson',
+    activity:'chip-activity',biblical:'chip-biblical',exitticket:'chip-exitticket'};
+  const typeLabel={bellringer:'Bellringer',minilesson:'Mini-lesson',activity:'Activity',
+    biblical:'Biblical',exitticket:'Exit ticket'};
+  document.getElementById('slide-editor-list').innerHTML = lesson.slides.map((sl,i)=>`
+    <div class="slide-editor-item ${editingSlideIdx===i?'editing':''}" onclick="editSlide(${i})">
+      <div>
+        <span class="slide-type-chip ${chipClass[sl.type]||''}">${typeLabel[sl.type]||sl.type}</span>
+        <span style="font-size:13px;color:var(--text);margin-left:8px;font-weight:500">${sl.title}</span>
+      </div>
+      <div style="display:flex;gap:6px">
+        ${i>0?`<button class="resp-action-btn" onclick="event.stopPropagation();moveSlide(${i},-1)">↑</button>`:''}
+        ${i<lesson.slides.length-1?`<button class="resp-action-btn" onclick="event.stopPropagation();moveSlide(${i},1)">↓</button>`:''}
+        <button class="resp-action-btn" style="color:var(--red)" onclick="event.stopPropagation();deleteSlide(${i})">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function editSlide(i){
+  editingSlideIdx=i;
+  const lesson=LESSONS.find(l=>l.id===currentLessonId);
+  const sl=lesson.slides[i];
+  const ix=sl.interaction;
+  document.getElementById('ed-slide-type').value    = sl.type;
+  document.getElementById('ed-slide-title').value   = sl.title;
+  document.getElementById('ed-slide-bullets').value = sl.bullets.join('\n');
+  document.getElementById('ed-ix-type').value       = ix.type;
+  document.getElementById('ed-ix-prompt').value     = ix.prompt;
+  document.getElementById('ed-ix-timer').value      = ix.timerMins||0;
+  document.getElementById('ed-poll-opts').value     = (ix.options||[]).join('\n');
+  toggleIxFields();
+  document.getElementById('slide-editor-form').classList.remove('hidden');
+  renderSlideEditorList();
+}
+
+function toggleIxFields(){
+  const isPoll = document.getElementById('ed-ix-type').value==='poll';
+  document.getElementById('ed-timer-row').classList.toggle('hidden', isPoll);
+  document.getElementById('ed-poll-row').classList.toggle('hidden', !isPoll);
+}
+
+function saveSlide(){
+  if(editingSlideIdx===null) return;
+  const lesson=LESSONS.find(l=>l.id===currentLessonId);
+  const sl=lesson.slides[editingSlideIdx];
+  sl.type   = document.getElementById('ed-slide-type').value;
+  sl.title  = document.getElementById('ed-slide-title').value;
+  sl.bullets= document.getElementById('ed-slide-bullets').value.split('\n').filter(b=>b.trim());
+  const ixType = document.getElementById('ed-ix-type').value;
+  sl.interaction = {
+    type: ixType,
+    label: {write:'Written response',poll:'Quick poll'}[ixType],
+    prompt: document.getElementById('ed-ix-prompt').value,
+    timerMins: ixType==='write' ? parseInt(document.getElementById('ed-ix-timer').value)||0 : undefined,
+    options: ixType==='poll' ? document.getElementById('ed-poll-opts').value.split('\n').filter(o=>o.trim()) : undefined
+  };
+  document.getElementById('slide-editor-form').classList.add('hidden');
+  editingSlideIdx=null;
+  renderSlideEditorList();
+  showSaveBanner();
+}
+
+function cancelSlideEdit(){
+  document.getElementById('slide-editor-form').classList.add('hidden');
+  editingSlideIdx=null;
+  renderSlideEditorList();
+}
+
+function addNewSlide(){
+  const lesson=LESSONS.find(l=>l.id===currentLessonId);
+  lesson.slides.push({
+    type:'minilesson', title:'New slide',
+    bullets:['Add your first bullet point here.'],
+    interaction:{type:'write',label:'Think & type',prompt:'Your response prompt here.',timerMins:2}
+  });
+  editingSlideIdx=lesson.slides.length-1;
+  renderSlideEditorList();
+  editSlide(editingSlideIdx);
+}
+
+function deleteSlide(i){
+  if(!confirm('Delete this slide?')) return;
+  const lesson=LESSONS.find(l=>l.id===currentLessonId);
+  lesson.slides.splice(i,1);
+  editingSlideIdx=null;
+  document.getElementById('slide-editor-form').classList.add('hidden');
+  renderSlideEditorList();
+}
+
+function moveSlide(i, dir){
+  const lesson=LESSONS.find(l=>l.id===currentLessonId);
+  const j=i+dir;
+  if(j<0||j>=lesson.slides.length) return;
+  [lesson.slides[i],lesson.slides[j]]=[lesson.slides[j],lesson.slides[i]];
+  renderSlideEditorList();
+}
+
+function saveLesson(){
+  const lesson=LESSONS.find(l=>l.id===currentLessonId);
+  lesson.title  = document.getElementById('ed-title').value;
+  lesson.date   = document.getElementById('ed-date').value;
+  lesson.active = document.getElementById('ed-active').value==='true';
+  renderSidebar();
+  saveToStorage();
+  showSaveBanner();
+}
+
+function exportData(){
+  const lesson=LESSONS.find(l=>l.id===currentLessonId);
+  const content=`// Lesson data for ${lesson.title}\n// Paste into your lesson_data.js file\n\n`+JSON.stringify(lesson,null,2);
+  const blob=new Blob([content],{type:'text/plain'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`lesson_${lesson.id}.js`;
+  a.click();
+}
+
+function showSaveBanner(){
+  const b=document.getElementById('save-banner');
+  b.style.display='flex';
+  setTimeout(()=>b.style.display='none',3000);
+}
+
+function saveToStorage(){
+  localStorage.setItem('fet_lessons', JSON.stringify(LESSONS));
+}
+
+// Load from storage on init
+try{
+  const saved=localStorage.getItem('fet_lessons');
+  if(saved){ LESSONS=JSON.parse(saved); renderSidebar(); loadLesson(currentLessonId); }
+}catch(e){}
+</script>
+</body>
+</html>
