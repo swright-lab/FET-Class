@@ -215,7 +215,7 @@ textarea.resp:focus{outline:none;border-color:var(--teal)}
 </div>
 
 <script>
-const BACKEND_URL = https://script.google.com/macros/s/AKfycbz6eEDV2aZ7k1xoCzSq97RbrtHUIWA-GNBzkqc82h76pGR1_WZm_w5pGMvX-4YcIwS_/exec;
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbz6eEDV2aZ7k1xoCzSq97RbrtHUIWA-GNBzkqc82h76pGR1_WZm_w5pGMvX-4YcIwS_/exec";
 
 // ── ROSTER — replace with your actual class names ─────────────────────────
 const ROSTER = [
@@ -383,12 +383,12 @@ async function push(idx,val){
     lessonTitle:lesson.title,slideIndex:idx,slideType:sl.type,slideTitle:sl.title,
     responseType:sl.interaction.type,response:String(val),
     unit:lesson.unit,week:lesson.week,day:lesson.day};
-  if(!navigator.onLine||BACKEND_URL==="YOUR_APPS_SCRIPT_URL_HERE"){queue.push(p);return;}
+  if(!navigator.onLine||BACKEND_URL==="https://script.google.com/macros/s/AKfycbz6eEDV2aZ7k1xoCzSq97RbrtHUIWA-GNBzkqc82h76pGR1_WZm_w5pGMvX-4YcIwS_/exec"){queue.push(p);return;}
   try{await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify(p)});}
   catch(e){queue.push(p);}
 }
 async function flush(){
-  while(queue.length&&BACKEND_URL!=="YOUR_APPS_SCRIPT_URL_HERE"){
+  while(queue.length&&BACKEND_URL!=="https://script.google.com/macros/s/AKfycbz6eEDV2aZ7k1xoCzSq97RbrtHUIWA-GNBzkqc82h76pGR1_WZm_w5pGMvX-4YcIwS_/exec"){
     const item=queue.shift();
     try{await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify(item)});}
     catch(e){queue.unshift(item);break;}
