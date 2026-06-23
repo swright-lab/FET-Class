@@ -372,10 +372,16 @@ window.addEventListener('online',()=>{ document.getElementById('offline-banner')
 window.addEventListener('offline',()=>{ document.getElementById('offline-banner').style.display='flex'; });
 
 // ── RESPONSE ──────────────────────────────────────────────────────────────
-function saveResp(idx,val){
-  responses[idx]=val;
-  save(`fet_${user.name}_${lesson.id}`,responses);
-  push(idx,val);
+function saveResp(idx, val) {
+  console.log('saveResp called:', idx, val);
+  responses[idx] = val;
+  try {
+    save('fet_' + user.name + '_' + lesson.id, responses);
+    console.log('Saved to localStorage');
+  } catch(e) {
+    console.log('localStorage error:', e);
+  }
+  push(idx, val);
 }
 async function push(idx,val){
   const sl=lesson.slides[idx];
@@ -384,7 +390,7 @@ async function push(idx,val){
     responseType:sl.interaction.type,response:String(val),
     unit:lesson.unit,week:lesson.week,day:lesson.day};
   if(!navigator.onLine||BACKEND_URL==="https://script.google.com/macros/s/AKfycbz6eEDV2aZ7k1xoCzSq97RbrtHUIWA-GNBzkqc82h76pGR1_WZm_w5pGMvX-4YcIwS_/exec"){queue.push(p);return;}
-  try{await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify(p)});}
+  try{await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify(p),mode:'no-cors'});}
   catch(e){queue.push(p);}
 }
 async function flush(){
@@ -484,9 +490,13 @@ function onInput(){
   sb.disabled=n<5;
 }
 function submitWrite(){
-  const val=document.getElementById('ta')?.value?.trim();
-  if(!val||val.length<5) return;
-  saveResp(slide,val); render();
+  const ta=document.getElementById('ta');
+  if(!ta){console.log('textarea not found');return;}
+  const val=ta.value.trim();
+  console.log('Submit clicked, length:',val.length);
+  if(val.length<5){console.log('Too short');return;}
+  saveResp(slide,val);
+  render();
 }
 function castVote(i){
   if(responses[slide]!==undefined) return;
