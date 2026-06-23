@@ -478,7 +478,7 @@ let LESSONS = [
 ];
 
 // ── STATE ─────────────────────────────────────────────────────────────────
-const BACKEND_URL = https://script.google.com/macros/s/AKfycbz6eEDV2aZ7k1xoCzSq97RbrtHUIWA-GNBzkqc82h76pGR1_WZm_w5pGMvX-4YcIwS_/exec;
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbz6eEDV2aZ7k1xoCzSq97RbrtHUIWA-GNBzkqc82h76pGR1_WZm_w5pGMvX-4YcIwS_/exec";
 let currentLessonId = LESSONS.find(l=>l.active)?.id || LESSONS[0].id;
 let currentSlideIdx = 0;
 let editingSlideIdx = null;
@@ -665,7 +665,7 @@ function updateStats(){
 }
 
 function startPolling(){
-  if(BACKEND_URL==="YOUR_APPS_SCRIPT_URL_HERE") return;
+  if(BACKEND_URL==="https://script.google.com/macros/s/AKfycbz6eEDV2aZ7k1xoCzSq97RbrtHUIWA-GNBzkqc82h76pGR1_WZm_w5pGMvX-4YcIwS_/exec") return;
   pollInterval=setInterval(async()=>{
     try{
       const r=await fetch(`${BACKEND_URL}?action=getResponses&lessonId=${currentLessonId}`);
