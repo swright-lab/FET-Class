@@ -235,7 +235,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
         <div class="stat-card">
           <div class="stat-num" id="stat-submitted">0</div>
           <div class="stat-label">Submitted</div>
-          <div class="stat-trend" id="stat-trend">of 24 students</div>
+          <div class="stat-trend" id="stat-trend">of <span id="class-size">3</span> students</div>
         </div>
         <div class="stat-card">
           <div class="stat-num" id="stat-pct">0%</div>
@@ -479,6 +479,16 @@ let LESSONS = [
 
 // ── STATE ─────────────────────────────────────────────────────────────────
 const BACKEND_URL = "https://script.google.com/macros/s/AKfycbz6eEDV2aZ7k1xoCzSq97RbrtHUIWA-GNBzkqc82h76pGR1_WZm_w5pGMvX-4YcIwS_/exec";
+
+// ── ROSTER — keep this in sync with student.html ─────────────────────────
+// Add or remove students here when your class changes.
+// The dashboard uses this count for completion percentages.
+const ROSTER = [
+  "Gabe Freeman",
+  "Jack Jill",
+  "Renee Clark"
+];
+const CLASS_SIZE = ROSTER.length;
 let currentLessonId = LESSONS.find(l=>l.active)?.id || LESSONS[0].id;
 let currentSlideIdx = 0;
 let editingSlideIdx = null;
@@ -508,6 +518,8 @@ let highlighted = {};
 renderSidebar();
 loadLesson(currentLessonId);
 startPolling();
+document.getElementById("class-size").textContent = CLASS_SIZE;
+document.getElementById("stat-total").textContent = LESSONS.find(l=>l.id===currentLessonId)?.slides?.length || 0;
 
 function renderSidebar(){
   const container = document.getElementById('lesson-list');
@@ -659,7 +671,7 @@ function updateStats(){
   const votes  = Object.values((SIM_VOTES[currentLessonId]||{})[currentSlideIdx]||{}).reduce((a,b)=>a+b,0);
   const count  = lesson.slides[currentSlideIdx].interaction.type==='poll' ? votes : resps.length;
   document.getElementById('stat-submitted').textContent = count;
-  document.getElementById('stat-pct').textContent = Math.round(count/24*100)+'%';
+  document.getElementById('stat-pct').textContent = Math.round(count/CLASS_SIZE*100)+'%';
   document.getElementById('stat-slide').textContent = currentSlideIdx+1;
   document.getElementById('stat-total').textContent = lesson.slides.length;
 }
